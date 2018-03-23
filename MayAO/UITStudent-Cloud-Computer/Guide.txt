@@ -1,8 +1,0 @@
-﻿* Hướng dẫn sử dụng máy ảo tại nhà:
-	- Bước 1: Em cài đặt VPN để kết nối máy ảo tại nhà. Em dựa vào file word để tiến hành cài đặt. Các file cần dùng để cài đặt đã được đính kèm trong folder này.
-	- Bước 2: Sau khi cài đặt, em khởi động chương trình để nhập user và pass. Sau khi nhập thông tin chính xác, thông báo kết nối thành công vào mạng trường sẽ được hiển thị.
-	- Bước 3: Mở chương trình Remote Desktop Connection của Window, đăng nhập với quyền "Administrator", nhập địa chỉ IP và Pass để kết nối vào máy ảo. Sau khi kết nối vào máy ảo thành công, em sử dụng như một máy tính thông thường. Em có thể copy hoặc cut file từ máy tính cá nhân sang máy ảo giống như di chuyển file trên Explorer.
-
-
-* Hướng dẫn sử dụng máy ảo trong trường:
-	- Bỏ qua bước 1 & 2, chỉ thực hiện thao tác ở bước 3 để kết nối máy ảo.
