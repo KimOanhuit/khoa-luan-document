@@ -45,14 +45,6 @@ def readWiki():
             else:
                 right_info.append(part[1])
         
-
-        count = 0
-        for key in information.keys():
-            if information[key][0] == '-1':
-                count += 1
-        
-        print count
-
         # for key in information.keys():
             # input = key.replace('[', '').replace(']', '').replace(',', '')
             # search = input.find(' ')
