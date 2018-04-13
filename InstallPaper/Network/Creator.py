@@ -14,16 +14,66 @@ class Creator(object):
     def __init__(self):
         self.wikiGraph = nx.DiGraph()
 
-    def wikiNetworkx(self, Data):
-        for i in range(1,len(Data)):
-            SRC  = int(Data.at[i,'SRC'])
-            self.wikiGraph.add_node(SRC)
-            TGT  = int(Data.at[i,'TGT'])
-            self.wikiGraph.add_node(TGT)
-            Sign = int(Data.at[i,'Sign'])
-            self.wikiGraph.add_edge(SRC, TGT, weight = Sign)
+    def readWiki(self):
+        f = open('Dataset/Wiki/WikiDataset.txt','r')
+        i = 0
+        authorToInt = {}
+        num = 0
+        source = -1
+        target = -1
+        information = {}
+        txt = []
+
+        for line in f:
+            if len(line) < 2:
+                source = -1
+                target = -1
+                i = 0
+                continue
+            line = line.replace('\n','')
+            value = line.split(":")[1]
+            i += 1
         
+            if i == 1:
+                if value not in authorToInt:
+                    authorToInt[value] = num
+                    num += 1
+                self.wikiGraph.add_node(authorToInt[value])
+                source = authorToInt[value]
+
+            elif i == 2:
+                if value not in authorToInt:
+                    authorToInt[value] = num
+                    num +=1
+                self.wikiGraph.add_node(authorToInt[value])
+                target = authorToInt[value]
+        
+            elif i == 3:
+                self.wikiGraph.add_edge(source,target,weight = int(value))
+        
+            elif i == 7:
+                information[(source,target)] = value
+                txt.append(value)
+
+            elif i == 8:
+                source = -1
+                target = -1
+                i = 0
+
         # nx.write_graphml(self.wikiGraph, "Dataset/Wiki/WikiGraph.graphml")
+
+        # edges = self.wikiGraph.edges()
+        # f = open('Dataset/Wiki/DatasetFull.txt', 'w')
+        # f.write('SRC,TGT,Sign,TXT\n')
+        # for edge in edges:
+        #     node1 = edge[0]
+        #     node2 = edge[1]
+        #     sign = self.wikiGraph.get_edge_data(node1, node2)
+        #     txt = information[edge].replace("'","").replace(",", "").replace(".", "").replace(":", "").replace(";", "").replace(":", "").replace("--", "")
+        #     data = str(node1) + ',' + str(node2) + ',' + str(sign['weight']) + ',' + txt + '\n'
+        #     f.write(data)
+        
+        # f.close()
 
     def getGraph(self):
         return self.wikiGraph()
@@ -114,88 +164,99 @@ class Creator(object):
         # print "IN: " + str(triadList)
 
     def computeFeatures(self,Data):
-        out = []
-        f = open('Dataset/Wiki/Features.csv','w')
-        # first = "SRC\tTGT\tSign\tIn+1\tIn-1\tOut+1\tOut-1\tIn+2\tIn-2\tOut+2\tOut-2\tCommonNeighbors\t"
-        first = "SRC,TGT,Sign,"
+        information_txt = {}
+        for i in range(0, len(Data)):
+            information_txt[int(Data.at[i,'SRC']), int(Data.at[i,'TGT'])] = (str(Data.at[i,'firstSVD']), str(Data.at[i,'secondSVD']))
+
+        f = open('Dataset/Wiki/FeaturesFull.txt','w')
+        first = "SRC,TGT,Sign,firstSVD,secondSVD,In+1,In-1,Out+1,Out-1,In+2,In-2,Out+2,Out-2,CommonNeighbors,"
         second = "FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm\n"
         firstLine = first + second
         f.write(firstLine)
-    
+        
         edges = self.wikiGraph.edges
         unG = self.wikiGraph.to_undirected(reciprocal=False)
-        for edge in edges:#pair, score in self.authorPairScore.iteritems():
-            test1 = edge[0]
-            test2 = edge[1]
-            if test1 == test2:
-                continue
-            sign = self.wikiGraph.get_edge_data(test1,test2)
-            f.write(str(test1) + "," + str(test2) + "," + str(sign['weight']) + ",")
 
-            neighbors1 = nx.all_neighbors(self.wikiGraph,test1)#self.graph.neighbors(test1)
-            neighbors2 = nx.all_neighbors(self.wikiGraph,test2)#self.graph.neighbors(test2)
+        for edge in edges:
+            try:
+                test1 = edge[0]
+                test2 = edge[1]
+                if test1 == test2:
+                    continue
+                sign = self.wikiGraph.get_edge_data(test1,test2)
+    
+                f.write(str(test1) + "," + str(test2) + "," + str(sign['weight']) + "," + information_txt[edge][0] + "," + information_txt[edge][1] + ",")
 
-            commonNeighbors = 0
-            nodesSeen = {}
-            plusCountIn = 0
-            minusCountIn = 0
-            plusCountOut = 0
-            minusCountOut = 0
+                neighbors1 = nx.all_neighbors(self.wikiGraph,test1)
+                neighbors2 = nx.all_neighbors(self.wikiGraph,test2)
 
-            rplusCountIn = 0
-            rminusCountIn = 0
-            rplusCountOut = 0
-            rminusCountOut = 0
+                commonNeighbors = 0
+                nodesSeen = {}
+                plusCountIn = 0
+                minusCountIn = 0
+                plusCountOut = 0
+                minusCountOut = 0
 
-            triadList = [0]*16
+                rplusCountIn = 0
+                rminusCountIn = 0
+                rplusCountOut = 0
+                rminusCountOut = 0
 
-            for neighbor1 in neighbors1:
-                for neighbor2 in neighbors2:
-                    pn = str(test2) + "," + str(neighbor2)
-                    if pn not in nodesSeen:
-                        nodesSeen[pn] = 1
-                        tmSign = self.wikiGraph.get_edge_data(test2,neighbor2,default={'weight':0})
-                        tmpSign = tmSign['weight']
-                        if tmpSign < 0:
-                            rminusCountOut += 1
-                        elif tmpSign > 0:
-                            rplusCountOut += 1
-                        else:
-                            tmSign = self.wikiGraph.get_edge_data(neighbor2,test2,default={'weight':0})
+                triadList = [0]*16
+
+                for neighbor1 in neighbors1:
+                    for neighbor2 in neighbors2:
+                        pn = str(test2) + "," + str(neighbor2)
+                        if pn not in nodesSeen:
+                            nodesSeen[pn] = 1
+                            tmSign = self.wikiGraph.get_edge_data(test2,neighbor2,default={'weight':0})
                             tmpSign = tmSign['weight']
                             if tmpSign < 0:
-                                rminusCountIn += 1
+                                rminusCountOut += 1
                             elif tmpSign > 0:
-                                rplusCountIn += 1
+                                rplusCountOut += 1
+                            else:
+                                tmSign = self.wikiGraph.get_edge_data(neighbor2,test2,default={'weight':0})
+                                tmpSign = tmSign['weight']
+                                if tmpSign < 0:
+                                    rminusCountIn += 1
+                                elif tmpSign > 0:
+                                    rplusCountIn += 1
 
-                pn1 = str(test1) + "," + str(neighbor1)
-                if pn1 not in nodesSeen:
-                    nodesSeen[pn1] = 1
-                    tmSign = self.wikiGraph.get_edge_data(test1,neighbor1,default={'weight':0})
-                    tmpSign = tmSign['weight']
-                    if tmpSign < 0:
-                        minusCountOut += 1
-                    elif tmpSign > 0:
-                        plusCountOut += 1
-                    else:
-                        tmSign = self.wikiGraph.get_edge_data(neighbor1,test1,default={'weight':0})
+                    pn1 = str(test1) + "," + str(neighbor1)
+                    if pn1 not in nodesSeen:
+                        nodesSeen[pn1] = 1
+                        tmSign = self.wikiGraph.get_edge_data(test1,neighbor1,default={'weight':0})
                         tmpSign = tmSign['weight']
                         if tmpSign < 0:
-                            minusCountIn += 1
+                            minusCountOut += 1
                         elif tmpSign > 0:
-                            plusCountIn += 1
-            commonNeigh = sorted(nx.common_neighbors(unG,test1,test2))
-            for inode in commonNeigh:
-                self.computeTriads(inode,test1,test2,triadList,self.wikiGraph)
+                            plusCountOut += 1
+                        else:
+                            tmSign = self.wikiGraph.get_edge_data(neighbor1,test1,default={'weight':0})
+                            tmpSign = tmSign['weight']
+                            if tmpSign < 0:
+                                minusCountIn += 1
+                            elif tmpSign > 0:
+                                plusCountIn += 1
+                commonNeigh = sorted(nx.common_neighbors(unG,test1,test2))
+                for inode in commonNeigh:
+                    self.computeTriads(inode,test1,test2,triadList,self.wikiGraph)
 
-            commonNeighbors = len(commonNeigh)
+                commonNeighbors = len(commonNeigh)
 
-            final = str(commonNeighbors)
-            for item in triadList:
-                final += "," + str(item)
+                text1 = str(plusCountIn) + "," + str(minusCountIn) + "," + str(plusCountOut) + "," + str(minusCountOut) + ","
+                text2 = str(rplusCountIn) + "," + str(rminusCountIn) + "," + str(rplusCountOut) + "," + str(rminusCountOut) + ","
+                final = text1 + text2 + str(commonNeighbors)
+                for item in triadList:
+                    final += ',' + str(item)
 
-            f.write(final+"\n")
+                f.write(final+"\n")
+            except KeyError:
+                continue
+        
         f.close()
+
 
 
 
