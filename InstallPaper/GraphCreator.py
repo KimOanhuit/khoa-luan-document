@@ -53,49 +53,29 @@ def readWiki():
 
 def resdataset():
 
-    Data = open('Dataset/Wiki/DatasetCopy1.csv', 'a+')
+    Data = open('Dataset/Wiki/DatasetFullCopy1.csv', 'a+')
     f = open('Dataset/Wiki/DatasetFullCopy.csv', 'r')
     
     for line in f.readlines():
         
         # line = re.sub(r'<.*?$',' ', line)
 
-        # if '-1,[[File\n' in line:
-        #     line = line.replace('-1,[[File\n','-1,Oppose\n')
         # if '1,[[File\n' in line:
-        #    line = line.replace('1,[[File\n','1,Support\n')
-        # if '-1,(\n' in line:
-        #     line = line.replace('-1,(\n','-1,Oppose\n')
+        #    continue
         # if '1,(\n' in line:
-        #    line = line.replace('1,(\n','1,Support\n')
-        # if '-1,+\n' in line:
-        #     line = line.replace('-1,+\n','-1,Oppose\n')
+        #    continue
         # if '1,+\n' in line:
-        #    line = line.replace('1,+\n','1,Support\n')
-        if '-1,-\n' in line:
-            line = line.replace('-1,-\n','-1,Oppose\n')
-        if '1,-\n' in line:
-           line = line.replace('1,-\n','1,Support\n')
-        if '-1,--\n' in line:
-            line = line.replace('-1,--\n','-1,Oppose\n')
-        if '1,--\n' in line:
-           line = line.replace('1,--\n','1,Support\n')
-        if '-1,\n' in line:
-            line = line.replace('-1,\n','-1,Oppose\n')
+        #    continue
+        # if '1,-\n' in line:
+        #    continue
+        # if '1,--\n' in line:
+        #    continue
         if '1,\n' in line:
-           line = line.replace('1,\n','1,Support\n')
-        # if '-1,[[Image\n' in line:
-        #     line = line.replace('-1,[[Image\n', '-1,Oppose\n')
+           continue
         # if '1,[[Image\n' in line:
-        #     line = line.replace('1,[[Image\n', '1,Support\n')
-        # if '-1,[[User\n' in line:
-        #     line = line.replace('-1,[[User\n', '-1,Oppose\n')
-        # if '1,[[User\n' in line:
-        #     line = line.replace('1,[[User\n', '1,Support\n')
-        # if '-1,[[WP\n' in line:
-        #     line = line.replace('-1,[[WP\n', '-1,Oppose\n')
-        # if '1,[[WP\n' in line:
-        #     line = line.replace('1,[[WP\n', '1,Support\n')
+        #     continue
+        # if '1,[http\n' in line:
+        #     continue
         
         Data.write(line)
     
@@ -132,20 +112,13 @@ def resdataset():
         #     line = line.replace('1,[[User\n', '1,Yes\n')
 
 def examine():
-    reader = csv.reader(open('Dataset/Wiki/test.csv'))
+    f = open('Dataset/Wiki/FeaturesFullTest.txt','r')
     count = 0
-    for i in reader:
-        count += 1
-        print count, i
-        # if count == 4424:
-        #     break
-    
-    # rows = list(reader)
-    # print len(rows)
-    # count = 0
-    # for row in reader:
-    #     count += 1
-    # print count
+    for line in f.readlines():
+        if line == '\n':
+            count += 1
+    print count
+
 
 # readWiki()
 resdataset()

@@ -69,7 +69,7 @@ class Creator(object):
         #     node1 = edge[0]
         #     node2 = edge[1]
         #     sign = self.wikiGraph.get_edge_data(node1, node2)
-        #     txt = information[edge].replace("'","").replace(",", "").replace(".", "").replace(":", "").replace(";", "").replace(":", "").replace("--", "")
+        #     txt = information[edge].replace(",", "").replace(".", "").replace(":", "").replace(";", "").replace(":", "").replace("--", "").replace("'''", "").replace("''", "")
         #     data = str(node1) + ',' + str(node2) + ',' + str(sign['weight']) + ',' + txt + '\n'
         #     f.write(data)
         
@@ -162,20 +162,43 @@ class Creator(object):
                         #BFpp
                         triadList[8] += 1
         # print "IN: " + str(triadList)
-
-    def computeFeatures(self,Data):
-        information_txt = {}
-        for i in range(0, len(Data)):
-            information_txt[int(Data.at[i,'SRC']), int(Data.at[i,'TGT'])] = (str(Data.at[i,'firstSVD']), str(Data.at[i,'secondSVD']))
-
-        f = open('Dataset/Wiki/FeaturesFull.txt','w')
-        first = "SRC,TGT,Sign,firstSVD,secondSVD,In+1,In-1,Out+1,Out-1,In+2,In-2,Out+2,Out-2,CommonNeighbors,"
-        second = "FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm\n"
-        firstLine = first + second
-        f.write(firstLine)
+    
+    def BFSGraph(self, graph, inode, num, information_txt):
+        BFS_listEdges = list(nx.bfs_edges(self.wikiGraph, inode))
+        BFS_listNode = []
+        for edge in BFS_listEdges:
+            if len(BFS_listNode) < num:
+                if edge[0] not in BFS_listNode:
+                    BFS_listNode.append(edge[0])
+                    graph.add_node(edge[0])
+                if edge[1] not in BFS_listNode:
+                    BFS_listNode.append(edge[1])
+                    graph.add_node(edge[1])
+            else:
+                continue
         
-        edges = self.wikiGraph.edges
-        unG = self.wikiGraph.to_undirected(reciprocal=False)
+        for node in BFS_listNode:
+            in_edge = self.wikiGraph.in_edges(node)
+            for edge in in_edge:
+                if edge[0] in BFS_listNode and edge[1] in BFS_listNode and edge not in graph.edges:
+                    sign = self.wikiGraph.get_edge_data(edge[0], edge[1])
+                    graph.add_edge(edge[0], edge[1], weight = int(sign['weight']))
+            
+            out_edge = self.wikiGraph.out_edges(node)
+            for edge in in_edge:
+                if edge[0] in BFS_listNode and edge[1] in BFS_listNode and edge not in graph.edges:
+                    sign = self.wikiGraph.get_edge_data(edge[0], edge[1])
+                    graph.add_edge(edge[0], edge[1], weight = int(sign['weight']))
+
+        f = open('Dataset/Wiki/FeaturesFullStep2.txt','a+')
+    
+        # first = "SRC,TGT,Sign,firstSVD,secondSVD,In+1,In-1,Out+1,Out-1,In+2,In-2,Out+2,Out-2,CommonNeighbors,"
+        # second = "FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm\n"
+        # firstLine = first + second
+        # f.write(firstLine)
+
+        edges = graph.edges
+        unG = graph.to_undirected(reciprocal=False)
 
         for edge in edges:
             try:
@@ -183,12 +206,11 @@ class Creator(object):
                 test2 = edge[1]
                 if test1 == test2:
                     continue
-                sign = self.wikiGraph.get_edge_data(test1,test2)
-    
-                f.write(str(test1) + "," + str(test2) + "," + str(sign['weight']) + "," + information_txt[edge][0] + "," + information_txt[edge][1] + ",")
-
-                neighbors1 = nx.all_neighbors(self.wikiGraph,test1)
-                neighbors2 = nx.all_neighbors(self.wikiGraph,test2)
+                sign = graph.get_edge_data(test1,test2)
+                f.write(str(test1) + "," + str(test2) + "," + str(sign['weight']) + ",")
+                
+                neighbors1 = nx.all_neighbors(graph,test1)
+                neighbors2 = nx.all_neighbors(graph,test2)
 
                 commonNeighbors = 0
                 nodesSeen = {}
@@ -226,14 +248,14 @@ class Creator(object):
                     pn1 = str(test1) + "," + str(neighbor1)
                     if pn1 not in nodesSeen:
                         nodesSeen[pn1] = 1
-                        tmSign = self.wikiGraph.get_edge_data(test1,neighbor1,default={'weight':0})
+                        tmSign = graph.get_edge_data(test1,neighbor1,default={'weight':0})
                         tmpSign = tmSign['weight']
                         if tmpSign < 0:
                             minusCountOut += 1
                         elif tmpSign > 0:
                             plusCountOut += 1
                         else:
-                            tmSign = self.wikiGraph.get_edge_data(neighbor1,test1,default={'weight':0})
+                            tmSign = graph.get_edge_data(neighbor1,test1,default={'weight':0})
                             tmpSign = tmSign['weight']
                             if tmpSign < 0:
                                 minusCountIn += 1
@@ -241,7 +263,7 @@ class Creator(object):
                                 plusCountIn += 1
                 commonNeigh = sorted(nx.common_neighbors(unG,test1,test2))
                 for inode in commonNeigh:
-                    self.computeTriads(inode,test1,test2,triadList,self.wikiGraph)
+                    self.computeTriads(inode,test1,test2,triadList,graph)
 
                 commonNeighbors = len(commonNeigh)
 
@@ -255,8 +277,27 @@ class Creator(object):
             except KeyError:
                 continue
         
+        # f.write('\n')
         f.close()
+        
+        # nx.write_graphml(graph, "Dataset/Wiki/GraphBFS.graphml")
+        
+    def computeFeatures(self,Data):
+        information_txt = {}
+        for i in range(0, len(Data)):
+            # information_txt[int(Data.at[i,'SRC']), int(Data.at[i,'TGT'])] = (str(Data.at[i,'firstSVD']), str(Data.at[i,'secondSVD']))
+            information_txt[int(Data.at[i,'SRC']), int(Data.at[i,'TGT'])] = str(Data.at[i,'TXT'])
 
+        nodes = self.wikiGraph.nodes()
+        list_random = [0]*10
+        for i in range (0, 10):
+            list_random[i] = random.choice(list(nodes))
+        
+        print 'How many node do you add in BFSGraph?'
+        num = int(raw_input())
+
+        for i in list_random:
+            self.BFSGraph(nx.DiGraph(), i, num, information_txt)
 
 
 

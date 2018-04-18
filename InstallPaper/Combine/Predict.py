@@ -1,252 +1,164 @@
-from sklearn.linear_model import LogisticRegression
-from random import randrange
-import random
+import re
 import networkx as nx
+import numpy as np
+import pandas as pd
+from nltk.corpus import stopwords
+from nltk.tokenize import regexp_tokenize
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn_pandas import DataFrameMapper
+from sklearn.model_selection import KFold
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import precision_recall_curve
 import matplotlib.pyplot as plt
 
-import numpy as np
-from sklearn import svm
-from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
-from sklearn.multiclass import OneVsRestClassifier
-
 class Predict(object):
-    features1 = []
-    output1 = []
-    features2 = []
-    output2 = []
-    features3 = []
-    output3 = []
-    features4 = []
-    output4 = []
-    features5 = []
-    output5 = []
-    features6 = []
-    output6 = []
-    features7 = []
-    output7 = []
-    features8 = []
-    output8 = []
-    features9 = []
-    output9 = []
-    features10 = []
-    output10 = []
-    logistic1 = []
-    logistic2 = []
-    logistic3 = []
-    logistic4 = []
-    logistic5 = []
-    logistic6 = []
-    logistic7 = []
-    logistic8 = []
-    logistic9 = []
-    logistic10 = []
-
-    def train1(self):
-        f = open('Dataset/Wiki/SetBFS/set1.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features1.append(splittedLine[3:])
-            self.output1.append(splittedLine[2])
-
-        self.logistic1 = LogisticRegression()
-        self.logistic1.fit(self.features1,self.output1)
-
-    def train2(self):
-        f = open('Dataset/Wiki/SetBFS/set2.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features2.append(splittedLine[3:])
-            self.output2.append(splittedLine[2])
+    information_txt = {}
+    feature = {}
+    outputs = []
+    edges = {}
+    
+    def Text(self, Data):
+        for i in range(0, len(Data)):
+            self.information_txt[int(Data.at[i,'SRC']), int(Data.at[i,'TGT'])] = str(Data.at[i,'TXT'])
         
-        self.logistic2 = LogisticRegression()
-        self.logistic2.fit(self.features2,self.output2)
-    
-    def train3(self):
-        f = open('Dataset/Wiki/SetBFS/set3.txt','r')
-        lines = f.readlines()
-        for line in lines:
+        f = open('Dataset/Wiki/FeaturesFull.txt','r')
+        for line in f.readlines():
             line.replace("\n", ",")
             splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features3.append(splittedLine[3:])
-            self.output3.append(splittedLine[2])
+            splittedLine = map(int, splittedLine)
+            self.edges[(splittedLine[0], splittedLine[1])] = splittedLine[2]
+
+            self.feature[(splittedLine[0], splittedLine[1])] = splittedLine[12:]
         
-        self.logistic3 = LogisticRegression()
-        self.logistic3.fit(self.features3,self.output3)
-    
-    def train4(self):
-        f = open('Dataset/Wiki/SetBFS/set4.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features4.append(splittedLine[3:])
-            self.output4.append(splittedLine[2])
+        for i in self.edges.keys():
+            try:
+                SRC = i[0]
+                TGT = i[1]
+                Sign = self.edges[i]
+                TXT = self.information_txt[i]
+                
+            except KeyError:
+                continue
+
+    def combineFeatures(self):
+        f = open('Dataset/Wiki/CombineStep1.txt', 'w')
+        first = "SRC,TGT,Sign,FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm,TXT\n"
+        f.write(first)
+        for key in self.feature.keys():
+
+            print self.feature[key]
+            try:
+                SRC = float(key[0])
+                TGT = float(key[1])
+                Sign = float(self.edges[key])
+                TXT = self.information_txt[key]
+                FFpp = float(self.feature[key][0])
+                FFpm = float(self.feature[key][1])
+                FFmp = float(self.feature[key][2])
+                FFmm = float(self.feature[key][3])
+                FBpp = float(self.feature[key][4])
+                FBpm = float(self.feature[key][5])
+                FBmp = float(self.feature[key][6])
+                FBmm = float(self.feature[key][7])
+                BFpp = float(self.feature[key][8])
+                BFpm = float(self.feature[key][9])
+                BFmp = float(self.feature[key][10])
+                BFmm = float(self.feature[key][11])
+                BBpp = float(self.feature[key][12])
+                BBpm = float(self.feature[key][13])
+                BBmp = float(self.feature[key][14])
+                BBmm = float(self.feature[key][15])
+                # print FFpp, FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm
+
+                text1 = str(SRC)+ ',' + str(TGT) + ',' + str(Sign) + ','
+                text2 = str(FFpp) + ',' + str(FFpm) + ',' + str(FFmp) + ',' + str(FFmm) + ',' + str(FBpp) + ',' + str(FBpm) + ',' + str(FBmp) + ',' + str(FBmm) + ','
+                text3 = str(BFpp) + ',' + str(BFpm) + ',' + str(BFmp) + ',' + str(BFmm) + ',' + str(BBpp) + ',' + str(BBpm) + ',' + str(BBmp) + ',' + str(BBmm) + ',' + TXT + '\n'
+                txt = text1 + text2 + text3
+                f.write(txt)
+            except KeyError:
+                continue 
         
-        self.logistic4 = LogisticRegression()
-        self.logistic4.fit(self.features4,self.output4)
+        f.close()
+
+    def clean_text(self, dataframe, col):
+        return dataframe[col].fillna('').apply(lambda x: re.sub('[^A-Za-z0-9]+', ' ', x.lower()))\
+                    .apply(lambda x: re.sub('\s+', ' ', x).strip())
+
+    def remove_stopwords(self, tokenized_words):
+        self.stop_words = stopwords.words('english')
+        return [[w.lower() for w in sent
+                if (w.lower() not in stop_words)]
+                for sent in tokenized_words]
     
-    def train5(self):
-        f = open('Dataset/Wiki/SetBFS/set5.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features5.append(splittedLine[3:])
-            self.output5.append(splittedLine[2])
+    def count_pattern(self, dataframe, col, pattern):
+        dataframe = dataframe.copy()
+        return dataframe[col].str.count(pattern)
+
+    def split_on_word(self, text):
+        if type(text) is list:
+            return [regexp_tokenize(sentence, pattern="\w+(?:[-']\w+)*") for sentence in text]
+        else:
+            return regexp_tokenize(text, pattern="\w+(?:[-']\w+)*")
+
+    def flatten_words(self, list1d, get_unique=False):
+        qa = [s.split() for s in list1d]
+        if get_unique:
+            return sorted(list(set([w for sent in qa for w in sent])))
+        else:
+            return [w for sent in qa for w in sent]
+
+    def allFeatures(self, dataframe):
+        dataframe = dataframe.fillna(' ')
+        # Lam sach cot "TXT"
+        text = self.clean_text(dataframe, 'TXT')
+
+        # Add text vao list
+        text_list = text.values.tolist()
+       
+        # Vector hoa
+        vocab = self.flatten_words(text_list, get_unique=True)
+        feature_extraction = TfidfVectorizer(analyzer='word', min_df=1, ngram_range=(1,1),stop_words='english', vocabulary=vocab, max_features=10000)
+
+        mapper = DataFrameMapper([
+            ('FFpp', None),
+            ('FFpm', None),
+            ('FFmp', None),
+            ('FFmm', None),
+            ('FBpp', None),
+            ('FBpm', None),
+            ('FBmp', None),
+            ('FBmm', None),
+            ('BFpp', None),
+            ('BFpm', None),
+            ('BFmp', None),
+            ('BFmm', None),
+            ('BBpp', None),
+            ('BBpm', None),
+            ('BBmp', None),
+            ('BBmm', None),
+            ('TXT', feature_extraction)
+        ])
+        X = mapper.fit_transform(dataframe.copy(), 2)
+        y = dataframe["Sign"].values
+
+        # kf = KFold(n_splits = 10, shuffle = False, random_state = None)
+
+        # for train, test in kf.split(X):
+        #     X_train = X[train]
+        #     y_train = y[train]
+        #     X_test = X[test]
+        #     y_test = y[test]
         
-        self.logistic5 = LogisticRegression()
-        self.logistic5.fit(self.features5,self.output5)
-
-    def train6(self):
-        f = open('Dataset/Wiki/SetBFS/set6.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features6.append(splittedLine[3:])
-            self.output6.append(splittedLine[2])
-        
-        self.logistic6 = LogisticRegression()
-        self.logistic6.fit(self.features6,self.output6)
-    
-    def train7(self):
-        f = open('Dataset/Wiki/SetBFS/set7.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features7.append(splittedLine[3:])
-            self.output7.append(splittedLine[2])
-        
-        self.logistic7 = LogisticRegression()
-        self.logistic7.fit(self.features7,self.output7)
-    
-    def train8(self):
-        f = open('Dataset/Wiki/SetBFS/set8.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features8.append(splittedLine[3:])
-            self.output8.append(splittedLine[2])
-        
-        self.logistic8 = LogisticRegression()
-        self.logistic8.fit(self.features8,self.output8)
-
-    def train9(self):
-        f = open('Dataset/Wiki/SetBFS/set9.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features9.append(splittedLine[3:])
-            self.output9.append(splittedLine[2])
-        
-        self.logistic9 = LogisticRegression()
-        self.logistic9.fit(self.features9,self.output9)
-    
-    def train10(self):
-        f = open('Dataset/Wiki/SetBFS/set10.txt','r')
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ",")
-            splittedLine = line.split(",")
-            splittedLine = map(float, splittedLine)
-            self.features10.append(splittedLine[3:])
-            self.output10.append(splittedLine[2])
-        
-        self.logistic10 = LogisticRegression()
-        self.logistic10.fit(self.features10,self.output10)
-    
-    def computeAccuracy(self,out,predictions,predictedSigns):
-        correct = 0
-        for i in range(0,len(out)):
-            if out[i] == predictedSigns[i]:
-                correct += 1
-
-        accuracy = correct / (1.0*len(out))
-        print "Accuracy: " + str(accuracy)
-
-    def predict1(self):
-        predictedSigns = self.logistic1.predict(self.features2)
-        list1 = self.logistic1.predict_proba(self.features2)
-        self.computeAccuracy(self.output1,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output2,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))   
-    
-    def predict2(self):
-        predictedSigns = self.logistic2.predict(self.features3)
-        list1 = self.logistic2.predict_proba(self.features3)
-        self.computeAccuracy(self.output2,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output3,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-
-    def predict3(self):
-        predictedSigns = self.logistic3.predict(self.features4)
-        list1 = self.logistic3.predict_proba(self.features4)
-        self.computeAccuracy(self.output3,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output4,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-
-    def predict4(self):
-        predictedSigns = self.logistic4.predict(self.features5)
-        list1 = self.logistic4.predict_proba(self.features5)
-        self.computeAccuracy(self.output4,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output5,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-
-    def predict5(self):
-        predictedSigns = self.logistic5.predict(self.features6)
-        list1 = self.logistic5.predict_proba(self.features6)
-        self.computeAccuracy(self.output5,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output6,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-
-    def predict6(self):
-        predictedSigns = self.logistic6.predict(self.features7)
-        list1 = self.logistic6.predict_proba(self.features7)
-        self.computeAccuracy(self.output6,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output7,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-
-    def predict7(self):
-        predictedSigns = self.logistic7.predict(self.features8)
-        list1 = self.logistic7.predict_proba(self.features8)
-        self.computeAccuracy(self.output7,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output8,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-
-    def predict8(self):
-        predictedSigns = self.logistic8.predict(self.features9)
-        list1 = self.logistic8.predict_proba(self.features9)
-        self.computeAccuracy(self.output8,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output9,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-    
-    def predict9(self):
-        predictedSigns = self.logistic9.predict(self.features10)
-        list1 = self.logistic9.predict_proba(self.features10)
-        self.computeAccuracy(self.output9,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output10,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
-    
-    def predict10(self):
-        predictedSigns = self.logistic10.predict(self.features1)
-        list1 = self.logistic10.predict_proba(self.features1)
-        self.computeAccuracy(self.output10,list1,predictedSigns)
-        fpr, tpr, _ = roc_curve(self.output1,predictedSigns)
-        print 'AUC: ' + str(auc(fpr, tpr))
+        #     logistic = LogisticRegression()
+        #     clf = logistic.fit(X_train, y_train)
+        #     pred = logistic.predict(X_test)
+                
+        #     acc = accuracy_score(pred, y_test)
+        #     print "Accuracy: ", round(acc,3)
+                
+        #     fpr, tpr, _ = roc_curve(y_test, pred)
+        #     roc_auc = auc(fpr, tpr)
+        #     print 'AUC/ROC: ' + str(roc_auc)
