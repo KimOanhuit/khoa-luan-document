@@ -190,7 +190,7 @@ class Creator(object):
                     sign = self.wikiGraph.get_edge_data(edge[0], edge[1])
                     graph.add_edge(edge[0], edge[1], weight = int(sign['weight']))
 
-        f = open('Dataset/Wiki/FeaturesFullStep2.txt','a+')
+        f = open('Dataset/Wiki/FeaturesFull_25%.txt','a+')
     
         # first = "SRC,TGT,Sign,firstSVD,secondSVD,In+1,In-1,Out+1,Out-1,In+2,In-2,Out+2,Out-2,CommonNeighbors,"
         # second = "FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm\n"

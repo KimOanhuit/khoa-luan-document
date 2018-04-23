@@ -1,7 +1,19 @@
-import pandas as pd
 import re
-import csv
 import networkx as nx
+import numpy as np
+import pandas as pd
+from nltk.corpus import stopwords
+from nltk.tokenize import regexp_tokenize
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn_pandas import DataFrameMapper
+from sklearn.model_selection import KFold
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import precision_recall_curve
+from scipy.sparse import hstack
+import matplotlib.pyplot as plt
 
 def readWiki():
     f = open('Dataset/Wiki/WikiDataset.txt', 'r')
@@ -53,9 +65,8 @@ def readWiki():
 
 def resdataset():
 
-    Data = open('Dataset/Wiki/DatasetFullCopy1.csv', 'a+')
-    f = open('Dataset/Wiki/DatasetFullCopy.csv', 'r')
-    
+    Data = open('Dataset/Wiki/DatasetFullTestCopy.csv', 'w')
+    f = open('Dataset/Wiki/DatasetFullTest.csv', 'r')
     for line in f.readlines():
         
         # line = re.sub(r'<.*?$',' ', line)
@@ -66,19 +77,23 @@ def resdataset():
         #    continue
         # if '1,+\n' in line:
         #    continue
-        # if '1,-\n' in line:
-        #    continue
-        # if '1,--\n' in line:
-        #    continue
         if '1,\n' in line:
            continue
+
+        # if '1,--\n' in line:
+        #    continue
+        
+        # if '1,\n' in line:
+        #    line = line.replace('1,\n', 'Yes')
+        #    count += 1
+        # if '-1,\n' in line:
+        #    line = line.replace('1,\n', 'No')
+        #    count += 1
         # if '1,[[Image\n' in line:
         #     continue
         # if '1,[http\n' in line:
         #     continue
-        
         Data.write(line)
-    
     Data.close()
 
     
@@ -119,15 +134,18 @@ def examine():
             count += 1
     print count
 
+def clean_text(dataframe, col):
+    return dataframe[col].fillna('').apply(lambda x: re.sub('[^A-Za-z0-9]+', ' ', x.lower()))\
+                .apply(lambda x: re.sub('\s+', ' ', x).strip())
 
-# readWiki()
+
+data = pd.read_csv('Dataset/Wiki/DatasetFullCopy.csv')
+data['TXT'] = clean_text(data, 'TXT')
+# data.to_csv('Dataset/Wiki/DatasetFullTest.csv')
+# finalDf = pd.concat([training['TXT_clean'],dataframe], axis = 1)
+
+    
 resdataset()
-# examine()
-# remove()
-    
-
-    
-
 
 
     

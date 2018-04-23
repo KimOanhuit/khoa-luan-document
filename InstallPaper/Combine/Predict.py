@@ -12,19 +12,23 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import precision_recall_curve
+from scipy.sparse import hstack
+from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
 
 class Predict(object):
     information_txt = {}
     feature = {}
+    feature_list = []
     outputs = []
     edges = {}
+    X_graph = [[]]
     
     def Text(self, Data):
         for i in range(0, len(Data)):
             self.information_txt[int(Data.at[i,'SRC']), int(Data.at[i,'TGT'])] = str(Data.at[i,'TXT'])
         
-        f = open('Dataset/Wiki/FeaturesFull.txt','r')
+        f = open('Dataset/Wiki/FeaturesFull_25%.txt','r')
         for line in f.readlines():
             line.replace("\n", ",")
             splittedLine = line.split(",")
@@ -44,12 +48,12 @@ class Predict(object):
                 continue
 
     def combineFeatures(self):
-        f = open('Dataset/Wiki/CombineStep1.txt', 'w')
-        first = "SRC,TGT,Sign,FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm,TXT\n"
-        f.write(first)
+        # f = open('Dataset/Wiki/Combine_25%.txt', 'w')
+        # first = "SRC,TGT,Sign,FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm,TXT\n"
+        # f.write(first)
         for key in self.feature.keys():
 
-            print self.feature[key]
+            # print self.feature[key]
             try:
                 SRC = float(key[0])
                 TGT = float(key[1])
@@ -77,11 +81,12 @@ class Predict(object):
                 text2 = str(FFpp) + ',' + str(FFpm) + ',' + str(FFmp) + ',' + str(FFmm) + ',' + str(FBpp) + ',' + str(FBpm) + ',' + str(FBmp) + ',' + str(FBmm) + ','
                 text3 = str(BFpp) + ',' + str(BFpm) + ',' + str(BFmp) + ',' + str(BFmm) + ',' + str(BBpp) + ',' + str(BBpm) + ',' + str(BBmp) + ',' + str(BBmm) + ',' + TXT + '\n'
                 txt = text1 + text2 + text3
-                f.write(txt)
+                # f.write(txt)
+                self.feature_list.append(self.feature[key])
             except KeyError:
                 continue 
-        
-        f.close()
+        self.X_graph = np.asarray(self.feature_list)
+        # f.close()
 
     def clean_text(self, dataframe, col):
         return dataframe[col].fillna('').apply(lambda x: re.sub('[^A-Za-z0-9]+', ' ', x.lower()))\
@@ -111,54 +116,42 @@ class Predict(object):
             return [w for sent in qa for w in sent]
 
     def allFeatures(self, dataframe):
-        dataframe = dataframe.fillna(' ')
+        data = dataframe.fillna('')
         # Lam sach cot "TXT"
         text = self.clean_text(dataframe, 'TXT')
 
         # Add text vao list
         text_list = text.values.tolist()
-       
+
         # Vector hoa
         vocab = self.flatten_words(text_list, get_unique=True)
-        feature_extraction = TfidfVectorizer(analyzer='word', min_df=1, ngram_range=(1,1),stop_words='english', vocabulary=vocab, max_features=10000)
+        feature_extraction = TfidfVectorizer(analyzer='word', min_df=1, ngram_range=(1,1),stop_words='english', vocabulary=vocab, max_features = 10000)
 
-        mapper = DataFrameMapper([
-            ('FFpp', None),
-            ('FFpm', None),
-            ('FFmp', None),
-            ('FFmm', None),
-            ('FBpp', None),
-            ('FBpm', None),
-            ('FBmp', None),
-            ('FBmm', None),
-            ('BFpp', None),
-            ('BFpm', None),
-            ('BFmp', None),
-            ('BFmm', None),
-            ('BBpp', None),
-            ('BBpm', None),
-            ('BBmp', None),
-            ('BBmm', None),
-            ('TXT', feature_extraction)
-        ])
-        X = mapper.fit_transform(dataframe.copy(), 2)
+        X_text = feature_extraction.fit_transform(dataframe["TXT"].values)
+        # X_txt = X_text.todense()
+        
+        # _dataframe = dataframe[['FFpp', 'FFpm', 'FFmp','FFmm','FBpp', 'FBpm', 'FBmp','FBmm','BFpp', 'BFpm', 'BFmp','BFmm','BBpp', 'BBpm', 'BBmp','BBmm']].values.astype(float)
+        # print _dataframe
+        
+        X = hstack([X_text,self.X_graph],format='csr')
         y = dataframe["Sign"].values
 
-        # kf = KFold(n_splits = 10, shuffle = False, random_state = None)
+        kf = KFold(n_splits = 10, shuffle = False, random_state = None)
 
-        # for train, test in kf.split(X):
-        #     X_train = X[train]
-        #     y_train = y[train]
-        #     X_test = X[test]
-        #     y_test = y[test]
+        for train, test in kf.split(X):
+            X_train = X[train]
+            y_train = y[train]
+            X_test = X[test]
+            y_test = y[test]
         
-        #     logistic = LogisticRegression()
-        #     clf = logistic.fit(X_train, y_train)
-        #     pred = logistic.predict(X_test)
+            logistic = LogisticRegression()
+            clf = logistic.fit(X_train, y_train)
+            pred = logistic.predict(X_test)
                 
-        #     acc = accuracy_score(pred, y_test)
-        #     print "Accuracy: ", round(acc,3)
+            acc = accuracy_score(pred, y_test)
+            print "Accuracy: ", round(acc,3)
                 
-        #     fpr, tpr, _ = roc_curve(y_test, pred)
-        #     roc_auc = auc(fpr, tpr)
-        #     print 'AUC/ROC: ' + str(roc_auc)
+            fpr, tpr, _ = roc_curve(y_test, pred)
+            roc_auc = auc(fpr, tpr)
+            print "AUC/ROC: ", round(roc_auc,3)
+        

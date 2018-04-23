@@ -17,7 +17,7 @@ class Predictor(object):
     output = []
    
     def readData(self):
-        f = open('Dataset/Wiki/FeaturesFullStep2.txt','r')
+        f = open('Dataset/Wiki/FeaturesFull_25%.txt','r')
         lines = f.readlines()
         for line in lines:
             # if line == '\n':
@@ -41,11 +41,11 @@ class Predictor(object):
             X_test = X[test]
             y_test = y[test]
     
-            clf = SVC(kernel='linear', C = 1).fit(X_train, y_train)
-            pred = clf.predict(X_test)
-            # logistic = LogisticRegression()
-            # clf = logistic.fit(X_train, y_train)
-            # pred = logistic.predict(X_test)
+            # clf = SVC(kernel='linear', C = 1).fit(X_train, y_train)
+            # pred = clf.predict(X_test)
+            logistic = LogisticRegression()
+            clf = logistic.fit(X_train, y_train)
+            pred = logistic.predict(X_test)
             
             acc = accuracy_score(pred, y_test)
             print "Accuracy: ", round(acc,3)

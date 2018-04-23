@@ -41,30 +41,28 @@ def main():
         reply = printMenu()
 
         if reply == 1:
-            Data = pd.read_csv('Dataset/Wiki/DatasetFullCopy.csv')
-            # graphx = Creator.Creator()
-            # graphx.readWiki()
-            # graphx.computeFeatures(Data)
+            Data = pd.read_csv('Dataset/Wiki/DatasetFullTestCopy.csv')
+            graphx = Creator.Creator()
+            graphx.readWiki()
+            graphx.computeFeatures(Data)
             
             predict = Predictor.Predictor()
             predict.readData()
             predict.trainStep1()
         
         elif reply == 2:
-            dataframe = pd.read_csv("Dataset/Wiki/DatasetFullCopy.csv")
+            dataframe = pd.read_csv("Dataset/Wiki/DatasetFullTestCopy.csv")
             text = Text.Text(dataframe)
             text.predict(dataframe)
 
         elif reply == 3:
-            data_original = pd.read_csv('Dataset/Wiki/DatasetFullCopy.csv')
-            dataframe = pd.read_csv('Dataset/Wiki/CombineStep2.csv')
+            dataframe = pd.read_csv('Dataset/Wiki/DatasetFullTestCopy.csv')
+            new_dataframe = pd.read_csv('Dataset/Wiki/Combine_25%.csv')
             p = Predict.Predict()
-            p.Text(data_original)
-            # p.combineFeatures()
-            p.allFeatures(dataframe)
-            # p.readData()
-            # p.features(df)
-
+            p.Text(dataframe)
+            p.combineFeatures()
+            p.allFeatures(new_dataframe)
+            
         elif reply == 4:
             break
 
