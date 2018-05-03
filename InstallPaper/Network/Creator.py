@@ -190,9 +190,9 @@ class Creator(object):
                     sign = self.wikiGraph.get_edge_data(edge[0], edge[1])
                     graph.add_edge(edge[0], edge[1], weight = int(sign['weight']))
 
-        f = open('Dataset/Wiki/FeaturesFull_25%.txt','a+')
+        f = open('Dataset/Wiki/FeaturesFull_12.5%.txt','a+')
     
-        # first = "SRC,TGT,Sign,firstSVD,secondSVD,In+1,In-1,Out+1,Out-1,In+2,In-2,Out+2,Out-2,CommonNeighbors,"
+        # first = "SRC,TGT,Sign,pnr_u,pnr_v"
         # second = "FFpp,FFpm,FFmp,FFmm,FBpp,FBpm,FBmp,FBmm,BFpp,BFpm,BFmp,BFmm,BBpp,BBpm,BBmp,BBmm\n"
         # firstLine = first + second
         # f.write(firstLine)
@@ -267,9 +267,12 @@ class Creator(object):
 
                 commonNeighbors = len(commonNeigh)
 
-                text1 = str(plusCountIn) + "," + str(minusCountIn) + "," + str(plusCountOut) + "," + str(minusCountOut) + ","
-                text2 = str(rplusCountIn) + "," + str(rminusCountIn) + "," + str(rplusCountOut) + "," + str(rminusCountOut) + ","
-                final = text1 + text2 + str(commonNeighbors)
+                pnr_u = plusCountOut / (minusCountOut + 0.000001) 
+                pnr_v = rplusCountIn / (rminusCountIn + 0.000001)
+
+                pnr = str(pnr_u) + ',' + str(pnr_v)
+
+                final = pnr
                 for item in triadList:
                     final += ',' + str(item)
 

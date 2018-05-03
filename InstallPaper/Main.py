@@ -42,13 +42,19 @@ def main():
 
         if reply == 1:
             Data = pd.read_csv('Dataset/Wiki/DatasetFullTestCopy.csv')
-            graphx = Creator.Creator()
-            graphx.readWiki()
-            graphx.computeFeatures(Data)
+            # graphx = Creator.Creator()
+            # graphx.readWiki()
+            # graphx.computeFeatures(Data)
             
             predict = Predictor.Predictor()
             predict.readData()
-            predict.trainStep1()
+            print '********************************'
+            print 'Predicting with Triads Balance Features'
+            predict.train()
+
+            print '********************************'
+            print 'Predicting with PNR Features'
+            predict.train1()
         
         elif reply == 2:
             dataframe = pd.read_csv("Dataset/Wiki/DatasetFullTestCopy.csv")

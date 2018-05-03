@@ -4,11 +4,17 @@ from nltk.corpus import stopwords
 from nltk.tokenize import regexp_tokenize
 from sklearn import cross_validation
 from sklearn.model_selection import KFold
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+
+# metrics
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_recall_curve_neg
+from scipy import interp
+
 import matplotlib.pyplot as plt
 
 class Text(object):
@@ -57,48 +63,70 @@ class Text(object):
         # Vector hoa
         vocab = self.flatten_words(text_list, get_unique=True)
         feature_extraction = TfidfVectorizer(analyzer='word', min_df=1, ngram_range=(1,1),stop_words='english', vocabulary=vocab, max_features=10000)
-        
-        # # PCA reduction to 2 dimension
-        # svd = TruncatedSVD(n_components=2)
-        # SVD = svd.fit_transform(X)
-        # dataframe['firstSVD']
-        # principalDf = pd.DataFrame(data = SVD, columns = ['firstSVD', 'secondSVD'])
-        # finalDf = pd.concat([principalDf,dataframe], axis = 1)
-        # finalDf.to_csv('Dataset/Wiki/test.csv')
 
-        # principalDf = pd.DataFrame(data = SVD, columns = ['firstSVD', 'secondSVD'])
-        # finalDf = pd.concat([principalDf,dataframe], axis = 1)
-        # finalDf.to_csv('Dataset/Wiki/testWithText.csv')
-
-        #KFolds
-
-        num = int(round(len(dataframe["TXT"])*0.15))
-        X = feature_extraction.fit_transform(dataframe["TXT"].values)
-        y = dataframe["Sign"].values
-
+        num = int(round(len(dataframe["TXT"])*0.6))
+        X = feature_extraction.fit_transform(dataframe["TXT"][:num].values)
+        y = dataframe["Sign"][:num].values
         kf = KFold(n_splits = 10, shuffle = False, random_state = None)
+        accs = []
 
+        tprs = []
+        aucs_roc = []
+        mean_fpr = np.linspace(0,1,100)
+
+        aucs_PR = []
+        aucs_negPR = []
+        
         for train, test in kf.split(X):
             X_train = X[train]
             y_train = y[train]
             X_test = X[test]
             y_test = y[test]
-        
+    
+            # clf = SVC(kernel='linear', C = 1).fit(X_train, y_train)
+            # pred = clf.predict(X_test)
             logistic = LogisticRegression()
             clf = logistic.fit(X_train, y_train)
             pred = logistic.predict(X_test)
-                
+            
             acc = accuracy_score(pred, y_test)
-            print "Accuracy: ", round(acc,3)
-                
+            accs.append(acc)
+            print "Accuracy: ", round(acc,2)
+            
             fpr, tpr, _ = roc_curve(y_test, pred)
+            tprs.append(interp(mean_fpr, fpr, tpr))
             roc_auc = auc(fpr, tpr)
-            print "AUC/ROC: ", round(roc_auc,3)
+            aucs_roc.append(roc_auc)
+            print "AUC/ROC: ", round(roc_auc,2)
 
+            precision, recall, thresholds = precision_recall_curve(y_test, pred)
+            auc_PR = auc(recall, precision)
+            aucs_PR.append(auc_PR)
+            print "AUC/PR: ", round(auc_PR,2)
 
+            precision_neg, recall_neg, thresholds_neg = precision_recall_curve_neg(y_test, pred)
+            auc_negPR = auc(recall_neg, precision_neg)
+            aucs_negPR.append(auc_negPR)
+            print "AUC/negPR: ", round(auc_negPR,2)
+        
+        accs_sum = sum(accs)
+        accs_length = len(accs)
+        accs_mean = accs_sum / accs_length
+        print "Accuracy Average: ", round(accs_mean,2)
 
+        mean_tpr = np.mean(tprs, axis=0)
+        mean_auc = auc(mean_fpr, mean_tpr)
+        print "AUC/ROC Average: ", round(mean_auc,2)
 
+        aucs_PR_sum = sum(aucs_PR)
+        aucs_PR_length = len(aucs_PR)
+        aucs_PR_mean = aucs_PR_sum / aucs_PR_length
+        print "AUC/PR Average: ", round(aucs_PR_mean,2)
 
+        aucs_negPR_sum = sum(aucs_negPR)
+        aucs_negPR_length = len(aucs_negPR)
+        aucs_negPR_mean = aucs_negPR_sum / aucs_negPR_length
+        print "AUC/negPR Average: ", round(aucs_negPR_mean,2)
 
 
 

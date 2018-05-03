@@ -17,51 +17,53 @@ import matplotlib.pyplot as plt
 
 def readWiki():
     f = open('Dataset/Wiki/WikiDataset.txt', 'r')
-    find_user = dict()
-    information = dict() #'SRC_ID TGT_ID':'VOT','RES','YEA','DAT','TXT'
-    left_info = []
-    right_info = []
-    id = 0
-
-    for line in f.readlines():
-        if line == '\n':
-            continue
-        line = line.replace("\n","")
-        part = line.split(":")
+    # find_user = dict()
+    # information = dict() #'SRC_ID TGT_ID':'VOT','RES','YEA','DAT','TXT'
+    # left_info = []
+    # right_info = []
+    # id = 0
+    a = f.readlines()
+    print a
+    
+    # for line in f.readlines():
+    #     if line == '\n':
+    #         continue
+    #     line = line.replace("\n","")
+    #     part = line.split(":")
             
-        if part[0] == "SRC":
-            if part[1] not in find_user:
-                id += 1
-                find_user[part[1]] = id
-            left_info.append(find_user[part[1]])
+    #     if part[0] == "SRC":
+    #         if part[1] not in find_user:
+    #             id += 1
+    #             find_user[part[1]] = id
+    #         left_info.append(find_user[part[1]])
             
-        elif part[0] == "TGT":
-            if part[1] not in find_user:
-                id += 1
-                find_user[part[1]] = id
-            left_info.append(find_user[part[1]])
+    #     elif part[0] == "TGT":
+    #         if part[1] not in find_user:
+    #             id += 1
+    #             find_user[part[1]] = id
+    #         left_info.append(find_user[part[1]])
                 
-        elif part[0] == "TXT":
-            right_info.append(part[1])
-            information["".join(str(left_info))] = right_info
-            right_info = []
-            left_info = []
-        else:
-            right_info.append(part[1])
+    #     elif part[0] == "TXT":
+    #         right_info.append(part[1])
+    #         information["".join(str(left_info))] = right_info
+    #         right_info = []
+    #         left_info = []
+    #     else:
+    #         right_info.append(part[1])
 
-    f = open ('Dataset/Wiki/DatasetFull.csv', 'a+')
-    f.write('SRC,TGT,Sign,TXT\n')
-    for key in information.keys():
-        input = key.replace('[', '').replace(']', '').replace(',', '')
-        find = input.find(' ')
-        SRC = input[:find]
-        TGT = input[find:]
-        TGT = TGT.replace(' ','')
-        Sign = information[key][0]
-        TXT = information[key][4].replace("'","").replace(",", "").replace(".", "").replace(":", "").replace(";", "").replace(":", "").replace("--", "")
-        data = SRC + ',' + TGT + ',' + Sign + ',' + TXT
-        f.write(data + '\n')
-    f.close()
+    # f = open ('Dataset/Wiki/DatasetFull.csv', 'a+')
+    # f.write('SRC,TGT,Sign,TXT\n')
+    # for key in information.keys():
+    #     input = key.replace('[', '').replace(']', '').replace(',', '')
+    #     find = input.find(' ')
+    #     SRC = input[:find]
+    #     TGT = input[find:]
+    #     TGT = TGT.replace(' ','')
+    #     Sign = information[key][0]
+    #     TXT = information[key][4].replace("'","").replace(",", "").replace(".", "").replace(":", "").replace(";", "").replace(":", "").replace("--", "")
+    #     data = SRC + ',' + TGT + ',' + Sign + ',' + TXT
+    #     f.write(data + '\n')
+    # f.close()
 
 def resdataset():
 
@@ -138,14 +140,13 @@ def clean_text(dataframe, col):
     return dataframe[col].fillna('').apply(lambda x: re.sub('[^A-Za-z0-9]+', ' ', x.lower()))\
                 .apply(lambda x: re.sub('\s+', ' ', x).strip())
 
-
-data = pd.read_csv('Dataset/Wiki/DatasetFullCopy.csv')
-data['TXT'] = clean_text(data, 'TXT')
+# data = pd.read_csv('Dataset/Wiki/DatasetFullCopy.csv')
+# data['TXT'] = clean_text(data, 'TXT')
 # data.to_csv('Dataset/Wiki/DatasetFullTest.csv')
 # finalDf = pd.concat([training['TXT_clean'],dataframe], axis = 1)
 
     
-resdataset()
+readWiki()
 
 
     
