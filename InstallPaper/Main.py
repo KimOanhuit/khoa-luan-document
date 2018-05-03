@@ -1,22 +1,12 @@
 from Network import Predictor
 from Network import Creator
 from Sentiment import Text
+from Sentiment import Doc2VecSentiment
 from Combine import Predict
-import networkx as nx
+
 import pandas as pd
 
-import re
-import numpy as np
-from nltk.corpus import stopwords
-from nltk.tokenize import regexp_tokenize
-from sklearn import cross_validation
-from sklearn.model_selection import KFold
-from sklearn.linear_model import LogisticRegression
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import precision_recall_curve
-import matplotlib.pyplot as plt
+
 
 def printMenu():
     print "-------------------------------------"
@@ -58,8 +48,10 @@ def main():
         
         elif reply == 2:
             dataframe = pd.read_csv("Dataset/Wiki/DatasetFullTestCopy.csv")
-            text = Text.Text(dataframe)
-            text.predict(dataframe)
+            # text = Text.Text(dataframe)
+            # text.predict(dataframe)
+            sentiment = Doc2VecSentiment.Doc2VecSentiment(dataframe)
+            sentiment.doc2Vec(dataframe)
 
         elif reply == 3:
             dataframe = pd.read_csv('Dataset/Wiki/DatasetFullTestCopy.csv')
